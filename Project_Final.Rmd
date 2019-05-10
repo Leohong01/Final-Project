@@ -1,0 +1,276 @@
+---
+title: "Final Project- Life Expectancy Estimation Analysis"
+author: "Leo Hong"
+date: "May 09, 2019"
+output: 
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## 1.Introduction
+Life expectancy is a measure of the average time an organism is expected to live based on the year of its birth, its current age and other many factors. Life expectancy is often used to gauge the overall health of one nation. Shifts in life expectency are often used to describe the trends in mortality. Being able to predict how populations will age has enormous implications for the planning and provision of services and support. Small increases in life expectancy translate into large increases in the population. The purpose of this study is as follow. First, I explored the importance of the antecedents that contribute to life expectancy and find the highest predicting factors based on prior literature review. Second, I explored whether there are any ways to improve my model that justifies a future research. Based on extensive literature, I initially identified 11 predicting variables that are worth considering in the study. I started by building an initial model using these 11 predicting variables followed by finding the best predictors for the model. I also included possible interaction variables and compared with best regression model.
+For data collection, I used World Bank website, launched in 2001, as it is a reliable resource available. My dataset consists of three seperate files; GDP file, population file, and trade file. Each file contains 8 countries categorized by 4 developed countries and 4 developing countries. 
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+setwd ('C:/Users/SCG05/Desktop/BigData')
+
+#install tidyverse package
+
+library(tidyverse)
+
+
+```
+## 2.Data analysis on world trade file 
+In this analysis, I analyzed world trade file. World trade file includes country, year, exports, imports and trade. Initial data cleaning was required. First, I cleaned rows containing 0 values using world_trade_new <-filter (world_trade, Imports>0, Exports>0) followed by round larger numbers down using option(scipen=999). I plotted a linear relationship to find out whether the dataset I chose is significant. I compared two models which include (y=imports, x=year) and (y=exports, x=year). After plotting, I ran a multiple regression (y=trade, x=year+imports+exports) to check the significance of dataset. Data results showed that all three variables are significant and did show a liner relationship. Imports and exports are higher in both United States and China which showed that both countries trade more goods/services than other countries.
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+setwd ('C:/Users/SCG05/Desktop/BigData')
+#------------------world trade--------------------
+#bring file world_trade
+world_trade <-read_csv ("world_trade.csv")
+#clean (row containing 0 followed by round off e values)
+world_trade_new <-filter (world_trade, Imports>0, Exports>0)
+options(scipen=999)
+#plot 
+
+ggplot(data=world_trade_new, mapping= aes(x= year, y=Imports, color=country))+ geom_line()
+
+ggplot(data=world_trade_new, mapping= aes(x= year, y=Exports, color=country))+geom_line()
+#basic regression
+world_trade_new1 <-lm (Trade ~ year + Imports+ Exports, data=world_trade_new)
+summary(world_trade_new1)
+# plot the regression (check the outlier= 292 and residuals)
+plot(world_trade_new1)
+
+
+
+```
+
+## 3.Data analysis on world GDP file
+In this analysis, I analyzed world GDP file. World GDP file includes country, year, unemployment, GDP, and GDP_capita. Initial data cleaning was required. First, I cleaned rows containing 0 values using world_gdp_new <- filter(world_gdp, unemployment>0) followed by round larger numbers down using option(scipen=999).I plotted a linear relationship to find out whether the dataset I chose is significant. I compared two models which include (y=unemployment, x=year) and (y=GDP_capita, x=year). After plotting, I ran a multiple regression (y=unemployment, x=all X variables) to check the significance of dataset. Data results showed that two variables are significant (GDP, GDP_capita) except year. Our plot shows there is a linear relationship in the model. Fluctuation in unemployment rates are common in developing countries than developed countries. GDP_capita which measures the country's living standard (e.g. affordable power) is relatively higher in developed countries. This shows that buying power in developed countries far exceeds the buying power in developing countries.
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+setwd ('C:/Users/SCG05/Desktop/BigData')
+#---------------------world_gdp--------------------
+#bring file world_gdp
+world_gdp <-read_csv ("world_gdp.csv")
+#clean (row containing 0 followed by round off e values)
+world_gdp_new <- filter(world_gdp,Unemployment>0)
+options(scipen=999)
+#plot 
+
+ggplot(data=world_gdp_new, mapping= aes(x= year, y=Unemployment, color=country))+ geom_line()
+
+ggplot(data=world_gdp_new, mapping= aes(x= year, y=GDP_capita, color=country))+ geom_line()
+#basic regression
+world_gdp_new1 <-lm (Unemployment ~ year + GDP+ GDP_capita, data=world_gdp_new)
+summary(world_gdp_new1)
+#plot the regression
+plot(world_gdp_new1)
+
+
+```
+
+## 4.Data analysis on world population file
+In this analysis, I analyzed world population file. World population file includes country, year, mortality, fertility, Life_exp, and population. Initial data cleaning was required. First, I cleaned rows containing 0 values using world_population_new <-filter(world_population, Mortality>0, Fertility>0) followed by round larger numbers down using option(scipen=999).I also believed that the size of population does not contribute to life expectancy. Therefore, I deleted population column using world_population_new1 <-select(world_population_new, -Population) %>% distinct.
+I plotted a linear relationship to find out whether the dataset I chose is significant. I compared two models which include (y=Life_exp, x=year) and (y=mortality, x=year). After plotting, I ran a multiple regression (y=Life_exp, x=all X variables) to check the significance of dataset. Data results showed that all three variables are significant (year, mortility, fertility). Our plot shows there is a linear relationship in the model. Throughout the years, the rates of life expectency increased in both developed countries and developing countries. Moreover, the rates of mortality decreased significantly in both developed and developing countries.       
+
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+setwd ('C:/Users/SCG05/Desktop/BigData')
+#-------------------- world population-----------------------
+#bring file world_population
+world_population <- read.csv ("world_population.csv")
+#clean (row containing 0 followed by round off e values)
+world_population_new <-filter(world_population, Mortality>0, Fertility>0)
+options(scipen=999)
+#plot
+
+ggplot(data=world_population_new, mapping= aes(y=Life_exp, x=year, color=country))+geom_line()
+
+ggplot(data=world_population_new, mapping= aes(y=Mortality, x=year, color=country))+geom_line()
+
+#population may not contribute to Life_exp, so delete population)
+world_population_new1 <-select(world_population_new, -Population) %>% distinct
+#basic regression
+world_population_regression <-lm(Life_exp ~ year+ Mortality + Fertility, data=world_population_new1)
+summary(world_population_regression)
+#plot the regression
+plot(world_population_new1)
+
+
+```
+
+
+## 5. Merging all three tables
+In this section, I merged all three tables together so that I can find which variables are significant on life expectancy. First, I deleted country and year from world_gdp file followed by left join with world_population. At the end, I also used left join to merge the final file world_trade. After successful merge, I deleted all rows containing 0 using world_final <- filter(world_final,Unemployment>0, Fertility>0, Mortality>0, Life_exp>0). Moreover, population does not contribute to our dinal model. I, therefore, deleted population column using world_final1 <-select(world_final, -Population)
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+setwd ('C:/Users/SCG05/Desktop/BigData')
+#-------------------------------merge tables-----------------------
+#delete country and year from world_gdp first
+world_gdp_select <-select (world_gdp, - country, -year)
+
+#left join with world population
+world_total <-left_join(world_population, world_gdp)
+view(world_total)
+
+#left join with world_trade
+world_final <- left_join (world_total, world_trade)
+view(world_final)
+
+#delete all rows with 0
+world_final <- filter(world_final,Unemployment>0, Fertility>0, Mortality>0, Life_exp>0)
+
+#get rid of population
+world_final1 <-select(world_final, -Population)
+
+
+```
+
+## 6. Run regression on merged file 
+In this section, I ran multi regression using all variables from the merged file. Our final results showed that 7 predicting variables are significant (year, mortality, GDP, GDP_capita, unemployment, export and trade) with R squared value of 88%. 
+
+
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+setwd ('C:/Users/SCG05/Desktop/BigData')
+
+# run regression (world)
+
+world_final_regression <- lm (Life_exp ~ year+Mortality +Fertility+GDP+GDP_capita+Unemployment +Imports+Exports+Trade, data=world_final)
+summary(world_final_regression)
+plot (world_final_regression)
+
+```
+
+## 7. Remove outliers
+However, there are a few outliers (row: 145, 147, 148) that need to be deleted before further analysis. I, therefore, deleted all outliers using world_final1 <- world_final1[-145,, drop=FALSE], world_final1 <- world_final1[-147,, drop=FALSE], world_final1 <- world_final1[-148,, drop=FALSE].  
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+# found outliers (#145, 147, 148)
+#get rid of outliers 
+world_final1[145,]
+world_final1[147,]
+world_final1[148,]
+world_final1 <- world_final1[-145,, drop=FALSE]
+world_final1 <- world_final1[-147,, drop=FALSE]
+world_final1 <- world_final1[-148,, drop=FALSE]
+
+```
+
+## 8. Run regression after removing outliers
+We ran multiple regression after removing initial outliers to see whether the model fits better. The results showed that the r squared value was slightly improved by 1%.
+
+
+
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+world_final_regression_new <- lm (Life_exp ~ year+Mortality +Fertility+GDP+GDP_capita+Unemployment +Imports+Exports+Trade, data=world_final1)
+summary(world_final_regression_new)
+plot (world_final_regression_new)
+
+```
+
+## 9. Best subset regression
+In this section, I conducted best subset regression. Best Subsets compares all possible models using a specified set of predictors, and displays the best-fitting models that contain one predictor, two predictors, and so on. In best regression model, BIC tells us the best predicting model. Therfore, I used the following function to draw BIC value. The results showed that #6 is the best regression model which includes mortality, GDP, GDP_capita, unemployment, explorts, and trade. 
+
+res.sum <- summary(best)
+data.frame(
+  Adj.R2 = which.max(res.sum$adjr2),
+  CP = which.min(res.sum$cp),
+  BIC = which.min(res.sum$bic)
+)
+
+
+
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+setwd ('C:/Users/SCG05/Desktop/BigData')
+library(tidyverse)
+library(leaps)
+#best subset regression using all variables, pick only 4 best)
+best <- regsubsets(Life_exp ~ year+Mortality +Fertility+GDP+GDP_capita+Unemployment +Imports+Exports+Trade, data=world_final1)
+summary(world_final1, nvmax=9)
+summary(best)
+
+#Pick the lowest BIC value --> 6 variables are the best
+res.sum <- summary(best)
+data.frame(
+  Adj.R2 = which.max(res.sum$adjr2),
+  CP = which.min(res.sum$cp),
+  BIC = which.min(res.sum$bic)
+)
+
+
+```
+
+## 10. Best subset regression analysis
+I included all the variables based on BIC and ran regression to check whether all variables from BIC are significant. The results showed that all 6 variables are significant with r-squared value of 0.8961. This tells us that best subset regression model predicts the best. 
+
+
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+best_subset <- lm(Life_exp ~ Mortality+GDP+GDP_capita+Unemployment+Exports+Trade, data=world_final1)
+summary(best_subset)
+
+
+```
+
+## 11. Interaction Effects
+In this analysis, I analyzed interaction effects.In more complex study areas, the independent variables might interact with each other. Interaction effects indicate that a third variable influences the relationship between an independent and dependent variable. This type of effect makes the model more complex, but if the real world behaves this way, it is critical to incorporate it in your model. I, therefore, included the following variables to the original model. 
+1. (Mortality:Fertility)
+2. (Imports:Exports)
+3. (GDP: GDP_capita)
+The results showed that (mortality:fertility) and (GDP:GDP-capita) are significant factors with r squared value 0.9058. 
+
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+world_final_int <- lm (Life_exp ~ year+Mortality +Fertility+GDP+GDP_capita+Unemployment +Imports+Exports+Trade +(Mortality:Fertility)+ (Imports:Exports)+(GDP:GDP_capita), data=world_final1)
+summary(world_final_int)
+plot(world_final_int)
+
+
+
+
+```
+
+## 12. Which model is better? (ANOVA test: best subset vs interaction)
+A good model not only needs to fit data well, it also needs to be parsimonious. That is, a good model should be only be as complex as necessary to describe a dataset. If you are choosing between a very simple model with 1 IV, and a very complex model with, say, 10 IVs, the very complex model needs to provide a much better fit to the data in order to justify its increased complexity. If it can't, then the more simpler model should be preferred.If the resulting p-value is sufficiently low (usually less than 0.05), we conclude that the more complex model is significantly better than the simpler model, and thus favor the more complex model. If the p-value is not sufficiently low (usually greater than 0.05), we should favor the simpler model. I compared two models. First model is best subset including 6 predicting variables and second model includes 12 predicting variables. As you can see, the result indicates that the more complex model has six additional degree of freedom, and a very small p-value (< .001). This means that adding interaction effects to the model did lead to a significantly improved fit over the model.
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+anova(best_subset,world_final_int)
+
+
+
+
+
+```
+
+## 13. Conclusion
+In this research, we have defined which variables predict life expectancy the most. To achieve our goal, we have analyzed several analysis in order to find the best fit model. Future researches can take our model into account and this can be used as a tool to measure life expectancy of a certain country. Our researech was done based on a reliable source from World Bank and this is a useful website to refer for future research on Life expectancey. For a future research, researchers should look into more predicting variables not included in this study. 

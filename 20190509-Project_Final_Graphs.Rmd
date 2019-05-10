@@ -1,0 +1,246 @@
+---
+title: "Final Project- Life Expectancy Estimation Analysis"
+author: "Leo Hong"
+date: "May 09, 2019"
+output: 
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## 1.Introduction
+ 
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+setwd ('C:/Users/SCG05/Desktop/BigData')
+
+#install tidyverse package
+
+library(tidyverse)
+
+
+```
+## 2.Data analysis on world trade file 
+
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+setwd ('C:/Users/SCG05/Desktop/BigData')
+#------------------world trade--------------------
+#bring file world_trade
+world_trade <-read_csv ("world_trade.csv")
+#clean (row containing 0 followed by round off e values)
+world_trade_new <-filter (world_trade, Imports>0, Exports>0)
+options(scipen=999)
+#plot 
+
+ggplot(data=world_trade_new, mapping= aes(x= year, y=Imports, color=country))+ geom_line()
+
+ggplot(data=world_trade_new, mapping= aes(x= year, y=Exports, color=country))+geom_line()
+#basic regression
+world_trade_new1 <-lm (Trade ~ year + Imports+ Exports, data=world_trade_new)
+summary(world_trade_new1)
+# plot the regression (check the outlier= 292 and residuals)
+plot(world_trade_new1)
+
+
+
+```
+
+## 3.Data analysis on world GDP file
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+setwd ('C:/Users/SCG05/Desktop/BigData')
+#---------------------world_gdp--------------------
+#bring file world_gdp
+world_gdp <-read_csv ("world_gdp.csv")
+#clean (row containing 0 followed by round off e values)
+world_gdp_new <- filter(world_gdp,Unemployment>0)
+options(scipen=999)
+#plot 
+
+ggplot(data=world_gdp_new, mapping= aes(x= year, y=Unemployment, color=country))+ geom_line()
+
+ggplot(data=world_gdp_new, mapping= aes(x= year, y=GDP_capita, color=country))+ geom_line()
+#basic regression
+world_gdp_new1 <-lm (Unemployment ~ year + GDP+ GDP_capita, data=world_gdp_new)
+summary(world_gdp_new1)
+#plot the regression
+plot(world_gdp_new1)
+
+
+```
+
+## 4.Data analysis on world population file
+
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+setwd ('C:/Users/SCG05/Desktop/BigData')
+#-------------------- world population-----------------------
+#bring file world_population
+world_population <- read.csv ("world_population.csv")
+#clean (row containing 0 followed by round off e values)
+world_population_new <-filter(world_population, Mortality>0, Fertility>0)
+options(scipen=999)
+#plot
+
+ggplot(data=world_population_new, mapping= aes(y=Life_exp, x=year, color=country))+geom_line()
+
+ggplot(data=world_population_new, mapping= aes(y=Mortality, x=year, color=country))+geom_line()
+
+#population may not contribute to Life_exp, so delete population)
+world_population_new1 <-select(world_population_new, -Population) %>% distinct
+#basic regression
+world_population_regression <-lm(Life_exp ~ year+ Mortality + Fertility, data=world_population_new1)
+summary(world_population_regression)
+#plot the regression
+plot(world_population_new1)
+
+
+```
+
+
+## 5. Merging all three tables
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+setwd ('C:/Users/SCG05/Desktop/BigData')
+#-------------------------------merge tables-----------------------
+#delete country and year from world_gdp first
+world_gdp_select <-select (world_gdp, - country, -year)
+
+#left join with world population
+world_total <-left_join(world_population, world_gdp)
+view(world_total)
+
+#left join with world_trade
+world_final <- left_join (world_total, world_trade)
+view(world_final)
+
+#delete all rows with 0
+world_final <- filter(world_final,Unemployment>0, Fertility>0, Mortality>0, Life_exp>0)
+
+#get rid of population
+world_final1 <-select(world_final, -Population)
+
+
+```
+
+## 6. Run regression on merged file 
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+setwd ('C:/Users/SCG05/Desktop/BigData')
+
+# run regression (world)
+
+world_final_regression <- lm (Life_exp ~ year+Mortality +Fertility+GDP+GDP_capita+Unemployment +Imports+Exports+Trade, data=world_final)
+summary(world_final_regression)
+plot (world_final_regression)
+
+```
+
+## 7. Remove outliers
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+# found outliers (#145, 147, 148)
+#get rid of outliers 
+world_final1[145,]
+world_final1[147,]
+world_final1[148,]
+world_final1 <- world_final1[-145,, drop=FALSE]
+world_final1 <- world_final1[-147,, drop=FALSE]
+world_final1 <- world_final1[-148,, drop=FALSE]
+
+```
+
+## 8. Run regression after removing outliers
+
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+world_final_regression_new <- lm (Life_exp ~ year+Mortality +Fertility+GDP+GDP_capita+Unemployment +Imports+Exports+Trade, data=world_final1)
+summary(world_final_regression_new)
+plot (world_final_regression_new)
+
+```
+
+## 9. Best subset regression
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+setwd ('C:/Users/SCG05/Desktop/BigData')
+library(tidyverse)
+library(leaps)
+#best subset regression using all variables, pick only 4 best)
+best <- regsubsets(Life_exp ~ year+Mortality +Fertility+GDP+GDP_capita+Unemployment +Imports+Exports+Trade, data=world_final1)
+summary(world_final1, nvmax=9)
+summary(best)
+
+#Pick the lowest BIC value --> 6 variables are the best
+res.sum <- summary(best)
+data.frame(
+  Adj.R2 = which.max(res.sum$adjr2),
+  CP = which.min(res.sum$cp),
+  BIC = which.min(res.sum$bic)
+)
+
+
+```
+
+## 10. Best subset regression analysis
+
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+best_subset <- lm(Life_exp ~ Mortality+GDP+GDP_capita+Unemployment+Exports+Trade, data=world_final1)
+summary(best_subset)
+
+
+```
+
+## 11. Interaction Effects
+
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+world_final_int <- lm (Life_exp ~ year+Mortality +Fertility+GDP+GDP_capita+Unemployment +Imports+Exports+Trade +(Mortality:Fertility)+ (Imports:Exports)+(GDP:GDP_capita), data=world_final1)
+summary(world_final_int)
+plot(world_final_int)
+
+
+
+
+```
+
+## 12. Which model is better? (ANOVA test: best subset vs interaction)
+
+
+```{r warning=FALSE, meassage=FALSE, error=FALSE, echo=FALSE}
+
+anova(best_subset,world_final_int)
+
+
+
+
+
+```
+
+ 
